@@ -31,6 +31,7 @@ func Register(app *fiber.App) {
 	p.Get("/transactions/expense", handlers.ListExpenses)
 	p.Put("/transactions/:id", handlers.UpdateTransaction)
 	p.Delete("/transactions/:id", handlers.DeleteTransaction)
+  p.Get("/transactionHistory", handlers.ListTransactions)
 
 	// --- Budgets ---
 	p.Post("/budgets", handlers.UpsertBudget)
