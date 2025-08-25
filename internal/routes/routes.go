@@ -36,6 +36,8 @@ func Register(app *fiber.App) {
 	// --- Budgets ---
 	p.Post("/budgets", handlers.UpsertBudget)
 	p.Get("/budgets", handlers.GetBudget)
+	p.Get("/budgets/summary", handlers.BudgetSummary)
+
 
 	// --- Category Budgets ---
 	p.Post("/category-budgets", handlers.UpsertCategoryBudget)
