@@ -21,26 +21,25 @@ type BudgetSummaryResponse struct {
 	CategoryBudgets []CategoryBudgetRow `json:"category_budgets"`
 	TotalBudget     float64             `json:"total_budget"`
 	TotalSpent      float64             `json:"total_spent"`
+	TotalIncome     float64             `json:"total_income"`
 }
 
-// GET /api/v1/budgets/summary?period=YYYY-MM
 func BudgetSummary(c *fiber.Ctx) error {
 	uid, ok := c.Locals("user_id").(string)
 	if !ok || uid == "" {
 		return fiber.NewError(fiber.StatusUnauthorized, "invalid user context")
 	}
 
-	// Default to current month if period not given
 	period := c.Query("period")
 	if period == "" {
 		period = time.Now().Format("2006-01")
 	}
 
-	// Validate period format
 	if !regexp.MustCompile(`^\d{4}-\d{2}$`).MatchString(period) {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid period format, expected YYYY-MM")
 	}
 
+	// Per-category budgets and spent
 	var rows []CategoryBudgetRow
 	raw := `
 WITH budgets AS (
@@ -71,17 +70,30 @@ ORDER BY c.name;
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
+	// Total budget for this period
 	var totalBudget float64
-	if err := database.DB.
-		Raw(`SELECT COALESCE(SUM(budget_limit),0) FROM category_budgets WHERE user_id = ? AND period = ?`, uid, period).
-		Scan(&totalBudget).Error; err != nil {
+	if err := database.DB.Raw(
+		`SELECT COALESCE(SUM(budget_limit),0) FROM category_budgets WHERE user_id = ? AND period = ?`,
+		uid, period,
+	).Scan(&totalBudget).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
+	// Total spent for this period
 	var totalSpent float64
-	if err := database.DB.
-		Raw(`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Expense' AND to_char(date,'YYYY-MM') = ?`, uid, period).
-		Scan(&totalSpent).Error; err != nil {
+	if err := database.DB.Raw(
+		`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Expense' AND to_char(date,'YYYY-MM') = ?`,
+		uid, period,
+	).Scan(&totalSpent).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	// Total income for this period
+	var totalIncome float64
+	if err := database.DB.Raw(
+		`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Income' AND to_char(date,'YYYY-MM') = ?`,
+		uid, period,
+	).Scan(&totalIncome).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
@@ -91,6 +103,7 @@ ORDER BY c.name;
 		CategoryBudgets: rows,
 		TotalBudget:     totalBudget,
 		TotalSpent:      totalSpent,
+		TotalIncome:     totalIncome,
 	}
 
 	return c.JSON(resp)

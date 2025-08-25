@@ -9,7 +9,7 @@ import (
 )
 
 type budgetReq struct {
-	Period      string  `json:"period" validate:"required"` // YYYY-MM
+	Period      string  `json:"period" validate:"required"` 
 	TotalBudget float64 `json:"total_budget" validate:"required,gte=0"`
 }
 
