@@ -68,7 +68,6 @@ ORDER BY c.name;
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	// Total budget for this period
 	var totalBudget float64
 	if err := database.DB.Raw(
 		`SELECT COALESCE(SUM(budget_limit),0) FROM category_budgets WHERE user_id = ? AND period = ?`,
