@@ -38,7 +38,6 @@ func BudgetSummary(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid period format, expected YYYY-MM")
 	}
 
-	// Per-category budgets and spent
 	var rows []CategoryBudgetRow
 	raw := `
 WITH budgets AS (
