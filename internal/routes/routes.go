@@ -47,6 +47,4 @@ func Register(app *fiber.App) {
 	p.Post("/investments", handlers.CreateInvestment)
 	p.Get("/investments", handlers.ListInvestments)
 
-	// --- Summary ---
-	p.Get("/summary", handlers.GetSummary)
 }
