@@ -139,7 +139,15 @@ curl -X POST http://localhost:8080/transactions \
 
 ---
 
+## 🤝 Contributing
 
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
 
 ## 📜 License
 
@@ -151,3 +159,4 @@ Distributed under the MIT License. See `LICENSE` for details.
 
 Do you also want me to add a **Docker setup section** (with `Dockerfile` + `docker-compose.yml` usage) inside this README so that the backend is production-ready?
 ```
+
