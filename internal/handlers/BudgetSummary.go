@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"regexp"
-	"time"
 	"github.com/PragaL15/Expense-Tracker/internal/database"
 	"github.com/gofiber/fiber/v2"
 )
@@ -16,7 +14,6 @@ type CategoryBudgetRow struct {
 
 type BudgetSummaryResponse struct {
 	UserID          string              `json:"user_id"`
-	Period          string              `json:"period"`
 	CategoryBudgets []CategoryBudgetRow `json:"category_budgets"`
 	TotalBudget     float64             `json:"total_budget"`
 	TotalSpent      float64             `json:"total_spent"`
@@ -29,21 +26,12 @@ func BudgetSummary(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "invalid user context")
 	}
 
-	period := c.Query("period")
-	if period == "" {
-		period = time.Now().Format("2006-01")
-	}
-
-	if !regexp.MustCompile(`^\d{4}-\d{2}$`).MatchString(period) {
-		return fiber.NewError(fiber.StatusBadRequest, "invalid period format, expected YYYY-MM")
-	}
-
 	var rows []CategoryBudgetRow
 	raw := `
 WITH budgets AS (
   SELECT category_id, COALESCE(SUM(budget_limit),0) AS budget_limit
   FROM category_budgets
-  WHERE user_id = ? AND period = ?
+  WHERE user_id = ?
   GROUP BY category_id
 ),
 spent AS (
@@ -51,7 +39,6 @@ spent AS (
   FROM transactions
   WHERE user_id = ?
     AND transaction_type = 'Expense'
-    AND to_char(date, 'YYYY-MM') = ?
   GROUP BY category_id
 )
 SELECT c.category_id,
@@ -64,39 +51,39 @@ LEFT JOIN spent   ON spent.category_id   = c.category_id
 WHERE budgets.category_id IS NOT NULL OR spent.category_id IS NOT NULL
 ORDER BY c.name;
 `
-	if err := database.DB.Raw(raw, uid, period, uid, period).Scan(&rows).Error; err != nil {
+	if err := database.DB.Raw(raw, uid, uid).Scan(&rows).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
+	// Total budget (all periods)
 	var totalBudget float64
 	if err := database.DB.Raw(
-		`SELECT COALESCE(SUM(budget_limit),0) FROM category_budgets WHERE user_id = ? AND period = ?`,
-		uid, period,
+		`SELECT COALESCE(SUM(budget_limit),0) FROM category_budgets WHERE user_id = ?`,
+		uid,
 	).Scan(&totalBudget).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	// Total spent for this period
+	// Total spent (all expenses)
 	var totalSpent float64
 	if err := database.DB.Raw(
-		`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Expense' AND to_char(date,'YYYY-MM') = ?`,
-		uid, period,
+		`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Expense'`,
+		uid,
 	).Scan(&totalSpent).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	// Total income for this period
+	// Total income (all income)
 	var totalIncome float64
 	if err := database.DB.Raw(
-		`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Income' AND to_char(date,'YYYY-MM') = ?`,
-		uid, period,
+		`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Income'`,
+		uid,
 	).Scan(&totalIncome).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	resp := BudgetSummaryResponse{
 		UserID:          uid,
-		Period:          period,
 		CategoryBudgets: rows,
 		TotalBudget:     totalBudget,
 		TotalSpent:      totalSpent,
