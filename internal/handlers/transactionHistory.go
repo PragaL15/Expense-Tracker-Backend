@@ -43,7 +43,7 @@ func ListTransactions(c *fiber.Ctx) error {
 		Joins("LEFT JOIN categories c ON c.category_id = t.category_id").
 		Where("t.user_id = ?", uid)
 
-	// Optional filters
+
 	if cid := c.Query("category_id"); cid != "" {
 		q = q.Where("t.category_id = ?", cid)
 	}
