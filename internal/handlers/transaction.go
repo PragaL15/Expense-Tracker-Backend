@@ -12,7 +12,7 @@ import (
 type txReq struct {
 	CategoryID string   `json:"category_id" validate:"required,uuid4"`
 	Amount     float64  `json:"amount" validate:"required,gte=0"`
-	Date       string   `json:"date" validate:"required"` // YYYY-MM-DD
+	Date       string   `json:"date" validate:"required"` 
 	Notes      *string  `json:"notes"`
 }
 
@@ -20,7 +20,6 @@ func MonthPeriod(t time.Time) string {
 	return t.UTC().Format("2006-01")
 }
 
-// ----- Income -----
 
 func CreateIncome(c *fiber.Ctx) error {
 	uid, ok := c.Locals("user_id").(string)
@@ -57,7 +56,6 @@ func CreateIncome(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(tx)
 }
 
-// ----- Expense -----
 
 func CreateExpense(c *fiber.Ctx) error {
 	uid, ok := c.Locals("user_id").(string)
@@ -97,7 +95,6 @@ func CreateExpense(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(tx)
 }
 
-// ----- List -----
 
 func ListExpenses(c *fiber.Ctx) error {
 	uid := c.Locals("user_id").(string)
