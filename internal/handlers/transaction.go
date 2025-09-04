@@ -149,7 +149,6 @@ func ListIncome(c *fiber.Ctx) error {
 	return c.JSON(list)
 }
 
-// ----- Update & Delete -----
 
 func UpdateTransaction(c *fiber.Ctx) error {
 	uid := c.Locals("user_id").(string)
@@ -179,7 +178,6 @@ func UpdateTransaction(c *fiber.Ctx) error {
 	existing.Amount = body.Amount
 	existing.Date = d
 	existing.Notes = body.Notes
-	// TransactionType stays unchanged
 
 	if err := database.DB.Save(&existing).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
@@ -211,7 +209,6 @@ func DeleteTransaction(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-// ----- Aggregations -----
 
 func updateBudgetSpent(userID string, date time.Time) {
 	period := MonthPeriod(date)
