@@ -58,14 +58,12 @@ func ListTransactions(c *fiber.Ctx) error {
 		}
 	}
 
-	// Sorting
 	sortOrder := c.Query("sort", "desc")
 	orderStr := "t.date DESC, t.created_at DESC"
 	if sortOrder == "asc" {
 		orderStr = "t.date ASC, t.created_at ASC"
 	}
 
-	// Fetch records
 	if err := q.Order(orderStr).Find(&transactions).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
