@@ -24,7 +24,6 @@ func JWTProtected() fiber.Handler {
 		if err != nil || !token.Valid {
 			return fiber.ErrUnauthorized
 		}
-
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			return fiber.ErrUnauthorized
