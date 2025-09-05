@@ -29,7 +29,6 @@ func JWTProtected() fiber.Handler {
 		if !ok {
 			return fiber.ErrUnauthorized
 		}
-		// optional: check expiry manually (Parse already validates if set properly)
 		if exp, ok := claims["exp"].(float64); ok && int64(exp) < time.Now().Unix() {
 			return fiber.ErrUnauthorized
 		}
