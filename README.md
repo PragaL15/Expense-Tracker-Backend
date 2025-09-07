@@ -130,15 +130,6 @@ curl -X POST http://localhost:8080/transactions \
 
 ---
 
-## ✅ Roadmap
-
-* [ ] Add category-based expense tracking
-* [ ] Add charts & analytics APIs
-* [ ] Implement recurring transactions
-* [ ] Add email reminders for investments
-
----
-
 ## 🤝 Contributing
 
 1. Fork the project
