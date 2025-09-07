@@ -88,8 +88,8 @@ Server runs at:
 
 | Method | Endpoint         | Description         |
 | ------ | ---------------- | ------------------- |
-| POST   | `/auth/register` | Register a new user |
-| POST   | `/auth/login`    | Login & get token   |
+| POST   | `/register` | Register a new user |
+| POST   | `/login`    | Login & get token   |
 
 ### Transactions
 
