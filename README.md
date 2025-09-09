@@ -1,9 +1,9 @@
 
 ```markdown
-# 📊 Expense Tracker Backend  
+# 📊Expense Tracker Backend📊
 
 A simple and efficient **backend API** for managing expenses, incomes, and balances.  
-Built with **Go (Golang)** and **Fiber** for fast, lightweight, and scalable performance.  
+Built with **Go(Golang)** and **Fiber** for fast, lightweight, and scalable performance.  
 
 ---
 
