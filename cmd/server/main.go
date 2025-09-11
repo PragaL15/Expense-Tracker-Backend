@@ -20,7 +20,7 @@ func main() {
 
 	// Enable CORS
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "https://expense-tracker-frontend-virid-ten.vercel.app", // your frontend URL
+		AllowOrigins: "https://expense-tracker-frontend-epms.vercel.app", // your frontend URL
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders: "Content-Type, Authorization",
 	}))
