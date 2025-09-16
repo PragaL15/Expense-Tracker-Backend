@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-
 	"github.com/PragaL15/Expense-Tracker/internal/config"
 	"github.com/PragaL15/Expense-Tracker/internal/database"
 	"github.com/PragaL15/Expense-Tracker/internal/routes"
