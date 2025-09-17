@@ -125,7 +125,6 @@ func makeJWT(userID string) (string, error) {
 	return t.SignedString(secret)
 }
 
-// envToInt converts an environment variable (hours) to int, with default fallback
 func envToInt(k string, def int) int {
 	if v := os.Getenv(k); v != "" {
 		if dur, err := time.ParseDuration(v + "h"); err == nil {
