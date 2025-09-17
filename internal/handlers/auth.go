@@ -112,7 +112,6 @@ func Profile(c *fiber.Ctx) error {
 	})
 }
 
-// makeJWT creates a JWT token with expiration and user ID as subject
 func makeJWT(userID string) (string, error) {
 	secret := []byte(os.Getenv("JWT_SECRET"))
 	expHrs := time.Duration(envToInt("JWT_EXPIRES_HOURS", 720)) * time.Hour
