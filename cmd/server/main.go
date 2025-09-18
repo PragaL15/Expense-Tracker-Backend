@@ -16,8 +16,8 @@ func main() {
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:5173", 
-		//AllowOrigins: "https://expense-tracker-frontend-gamma-lilac.vercel.app/", 
+		//AllowOrigins: "http://localhost:5173", 
+		AllowOrigins: "https://expense-tracker-frontend-gamma-lilac.vercel.app/", 
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders: "Content-Type, Authorization",
 	}))
