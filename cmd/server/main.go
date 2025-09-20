@@ -24,9 +24,7 @@ func main() {
 	app.Get("/healthz", func(c *fiber.Ctx) error {
 		return c.SendString("ok")
 	})
-
 	routes.Register(app)
-
 	addr := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("listening on %s", addr)
 	if err := app.Listen(addr); err != nil {
