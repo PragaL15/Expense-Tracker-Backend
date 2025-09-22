@@ -7,7 +7,7 @@ Built with **Go(Golang)** and **Fiber** for fast, lightweight, and scalable perf
 
 ---
 
-## ⚡ Tech Stack  
+### ⚡ Tech Stack  
 
 - Go (Golang)  
 - Fiber Framework  
@@ -17,7 +17,7 @@ Built with **Go(Golang)** and **Fiber** for fast, lightweight, and scalable perf
 
 ---
 
-## 📂 Project Structure  
+### 📂 Project Structure  
 
 ```
 
@@ -38,7 +38,7 @@ Expense-Tracker-Backend/
 
 ---
 
-## 🚀 Getting Started  
+### 🚀 Getting Started  
 
 ### Prerequisites  
 - Go **1.21+**  
@@ -82,7 +82,7 @@ Server runs at:
 
 ---
 
-## 📡 API Endpoints
+### 📡 API Endpoints
 
 ### Authentication
 
@@ -109,7 +109,7 @@ Server runs at:
 
 ---
 
-## 🛠️ Example Requests
+### 🛠️ Example Requests
 
 **Register User**
 
@@ -129,7 +129,7 @@ curl -X POST http://localhost:8080/transactions \
 ```
 ---
 
-## 📜 License
+### 📜 License
 
 Distributed under the MIT License. See `LICENSE` for details.
 
@@ -139,4 +139,10 @@ Distributed under the MIT License. See `LICENSE` for details.
 
 Do you also want me to add a **Docker setup section** (with `Dockerfile` + `docker-compose.yml` usage) inside this README so that the backend is production-ready?
 ```
+
+
+
+
+
+
 
