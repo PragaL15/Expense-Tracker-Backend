@@ -16,7 +16,7 @@ func main() {
 	app := fiber.New()
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "https://expense-tracker-frontend-gamma-lilac.vercel.app/", 
+		AllowOrigins: "https://expense-tracker-frontend-one-hazel.vercel.app/", 
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders: "Content-Type, Authorization",
 	}))
@@ -24,7 +24,7 @@ func main() {
 	app.Get("/healthz", func(c *fiber.Ctx) error {
 		return c.SendString("ok")
 	})
-	
+
 	routes.Register(app)
 	addr := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("listening on %s", addr)
