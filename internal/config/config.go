@@ -3,58 +3,42 @@ package config
 import (
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Port            string
-	AppEnv          string
-	DatabaseURL     string
-	JWTSecret       string
-	JWTExpiresHours int
+	DatabaseURL string
+	Port        string
+	AppEnv      string
+	JWTSecret   string
+	JWTExpires  string
 }
 
 func Load() *Config {
-	// Load .env file
+	// Load .env file if present
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("⚠️ No .env file found, using system env vars")
+		log.Println("⚠️ No .env file found, falling back to system env vars")
 	}
 
-	dbURL := mustEnv("DATABASE_URL")
-
-	port := getEnv("PORT", "8080")
-	appEnv := getEnv("APP_ENV", "development")
-	jwtSecret := mustEnv("JWT_SECRET")
-	jwtExpStr := getEnv("JWT_EXPIRES_HOURS", "72")
-
-	jwtExp, err := strconv.Atoi(jwtExpStr)
-	if err != nil {
-		log.Fatalf("❌ invalid JWT_EXPIRES_HOURS: %s", jwtExpStr)
+	cfg := &Config{
+		DatabaseURL: os.Getenv("DATABASE_URL"),
+		Port:        os.Getenv("PORT"),
+		AppEnv:      os.Getenv("APP_ENV"),
+		JWTSecret:   os.Getenv("JWT_SECRET"),
+		JWTExpires:  os.Getenv("JWT_EXPIRES_HOURS"),
 	}
 
-	return &Config{
-		Port:            port,
-		AppEnv:          appEnv,
-		DatabaseURL:     dbURL,
-		JWTSecret:       jwtSecret,
-		JWTExpiresHours: jwtExp,
+	// Fail fast if DATABASE_URL is missing
+	if cfg.DatabaseURL == "" {
+		log.Fatal("❌ missing required env var: DATABASE_URL")
 	}
-}
 
-func getEnv(k, def string) string {
-	if v := os.Getenv(k); v != "" {
-		return v
+	// Default port if empty
+	if cfg.Port == "" {
+		cfg.Port = "3000"
 	}
-	return def
-}
 
-func mustEnv(k string) string {
-	v := os.Getenv(k)
-	if v == "" {
-		log.Fatalf("❌ missing required env var: %s", k)
-	}
-	return v
+	return cfg
 }

@@ -55,7 +55,6 @@ ORDER BY c.name;
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	// Total budget (all periods)
 	var totalBudget float64
 	if err := database.DB.Raw(
 		`SELECT COALESCE(SUM(budget_limit),0) FROM category_budgets WHERE user_id = ?`,
@@ -64,7 +63,6 @@ ORDER BY c.name;
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	// Total spent (all expenses)
 	var totalSpent float64
 	if err := database.DB.Raw(
 		`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Expense'`,
