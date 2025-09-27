@@ -1,17 +1,19 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Investment struct {
-	InvestmentID   string    `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"investment_id"`
-	UserID         string    `gorm:"type:uuid;not null;index" json:"user_id"`
-	Type           string    `gorm:"not null" json:"type"`
-	AmountInvested float64   `gorm:"not null" json:"amount_invested"`
-	CurrentValue   *float64  `json:"current_value,omitempty"`
-	DateInvested   time.Time `gorm:"type:date;not null" json:"date_invested"`
-	ReminderDate   *time.Time `json:"reminder_date,omitempty"`
-	Notes          *string   `json:"notes,omitempty"`
-	CreatedAt      time.Time `gorm:"autoCreateTime" json:"created_at"`
+	InvestmentID   uuid.UUID `db:"investment_id" json:"investment_id"`
+	UserID         uuid.UUID `db:"user_id" json:"user_id"`
+	Type           string    `db:"type" json:"type"`
+	AmountInvested float64   `db:"amount_invested" json:"amount_invested"`
+	CurrentValue   float64   `db:"current_value" json:"current_value"`
+	DateInvested   time.Time `db:"date_invested" json:"date_invested"`
+	ReminderDate   *time.Time `db:"reminder_date" json:"reminder_date,omitempty"`
+	Notes          *string    `db:"notes" json:"notes,omitempty"`
+	CreatedAt      time.Time `db:"created_at" json:"created_at"`
 }
-
-func (Investment) TableName() string { return "investments" }
