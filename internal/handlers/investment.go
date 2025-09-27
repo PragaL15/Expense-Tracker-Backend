@@ -1,56 +1,97 @@
 package handlers
 
 import (
-	"time"
-
 	"github.com/gofiber/fiber/v2"
-	"github.com/go-playground/validator/v10"
-
+	"github.com/jmoiron/sqlx"
+	"github.com/google/uuid"
+	"time"
 	"github.com/PragaL15/Expense-Tracker/internal/models"
-	"github.com/PragaL15/Expense-Tracker/internal/database"
 )
 
-type invReq struct {
-	Type           string   `json:"type" validate:"required"`
-	AmountInvested float64  `json:"amount_invested" validate:"required,gte=0"`
-	CurrentValue   *float64 `json:"current_value"`
-	DateInvested   string   `json:"date_invested" validate:"required"` // YYYY-MM-DD
-	ReminderDate   *string  `json:"reminder_date"`
-	Notes          *string  `json:"notes"`
+type InvestmentHandler struct {
+	DB *sqlx.DB
 }
 
-func CreateInvestment(c *fiber.Ctx) error {
-	uid := c.Locals("user_id").(string)
-	var body invReq
-	if err := c.BodyParser(&body); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+// Add Investment
+func (h *InvestmentHandler) AddInvestment(c *fiber.Ctx) error {
+	var inv models.Investment
+	if err := c.BodyParser(&inv); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
 	}
-	if err := validator.New().Struct(body); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+
+	inv.InvestmentID = uuid.New()
+	inv.CreatedAt = time.Now()
+
+	_, err := h.DB.NamedExec(`
+		INSERT INTO investments 
+		(investment_id, user_id, type, amount_invested, current_value, date_invested, reminder_date, notes, created_at)
+		VALUES (:investment_id, :user_id, :type, :amount_invested, :current_value, :date_invested, :reminder_date, :notes, :created_at)
+	`, inv)
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "DB insert failed", "details": err.Error()})
 	}
-	di, err := time.Parse("2006-01-02", body.DateInvested)
-	if err != nil { return fiber.NewError(fiber.StatusBadRequest, "invalid date_invested") }
-	var rd *time.Time
-	if body.ReminderDate != nil && *body.ReminderDate != "" {
-		t, err := time.Parse("2006-01-02", *body.ReminderDate)
-		if err != nil { return fiber.NewError(fiber.StatusBadRequest, "invalid reminder_date") }
-		rd = &t
-	}
-	inv := models.Investment{
-		UserID: uid, Type: body.Type, AmountInvested: body.AmountInvested,
-		CurrentValue: body.CurrentValue, DateInvested: di, ReminderDate: rd, Notes: body.Notes,
-	}
-	if err := database.DB.Create(&inv).Error; err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-	}
-	return c.Status(fiber.StatusCreated).JSON(inv)
+
+	return c.Status(201).JSON(inv)
 }
 
-func ListInvestments(c *fiber.Ctx) error {
-	uid := c.Locals("user_id").(string)
-	var list []models.Investment
-	if err := database.DB.Where("user_id = ?", uid).Order("date_invested DESC").Find(&list).Error; err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+// Get All Investments
+func (h *InvestmentHandler) GetInvestments(c *fiber.Ctx) error {
+	userID := c.Query("user_id") 
+	if userID == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "user_id required"})
 	}
-	return c.JSON(list)
+
+	var investments []models.Investment
+	err := h.DB.Select(&investments, "SELECT * FROM investments WHERE user_id=$1 ORDER BY created_at DESC", userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to fetch", "details": err.Error()})
+	}
+
+	return c.JSON(investments)
+}
+
+// Get Single Investment
+func (h *InvestmentHandler) GetInvestment(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var inv models.Investment
+	err := h.DB.Get(&inv, "SELECT * FROM investments WHERE investment_id=$1", id)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Not found"})
+	}
+	return c.JSON(inv)
+}
+
+// Update Investment
+func (h *InvestmentHandler) UpdateInvestment(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var inv models.Investment
+	if err := c.BodyParser(&inv); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+	}
+
+	inv.InvestmentID = uuid.MustParse(id)
+
+	_, err := h.DB.NamedExec(`
+		UPDATE investments 
+		SET type=:type, amount_invested=:amount_invested, current_value=:current_value, 
+		    date_invested=:date_invested, reminder_date=:reminder_date, notes=:notes
+		WHERE investment_id=:investment_id
+	`, inv)
+
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "DB update failed", "details": err.Error()})
+	}
+
+	return c.JSON(inv)
+}
+
+// Delete Investment
+func (h *InvestmentHandler) DeleteInvestment(c *fiber.Ctx) error {
+	id := c.Params("id")
+	_, err := h.DB.Exec("DELETE FROM investments WHERE investment_id=$1", id)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "DB delete failed"})
+	}
+	return c.SendStatus(204)
 }
