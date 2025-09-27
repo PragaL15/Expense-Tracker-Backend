@@ -1,97 +1,129 @@
 package handlers
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/jmoiron/sqlx"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
+
+	"github.com/PragaL15/Expense-Tracker/internal/database"
 	"github.com/PragaL15/Expense-Tracker/internal/models"
 )
 
-type InvestmentHandler struct {
-	DB *sqlx.DB
-}
+var validate5= validator.New()
 
-// Add Investment
-func (h *InvestmentHandler) AddInvestment(c *fiber.Ctx) error {
-	var inv models.Investment
-	if err := c.BodyParser(&inv); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
-	}
-
-	inv.InvestmentID = uuid.New()
-	inv.CreatedAt = time.Now()
-
-	_, err := h.DB.NamedExec(`
-		INSERT INTO investments 
-		(investment_id, user_id, type, amount_invested, current_value, date_invested, reminder_date, notes, created_at)
-		VALUES (:investment_id, :user_id, :type, :amount_invested, :current_value, :date_invested, :reminder_date, :notes, :created_at)
-	`, inv)
-
+// ================= Add Investment =================
+func AddInvestment(c *fiber.Ctx) error {
+	uidStr := c.Locals("user_id").(string)
+	uid, err := uuid.Parse(uidStr)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "DB insert failed", "details": err.Error()})
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid user ID")
 	}
 
-	return c.Status(201).JSON(inv)
+	var body models.Investment
+	if err := c.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	// Assign server-side fields
+	body.UserID = uid
+	body.InvestmentID = uuid.New() // Correct type
+	body.CreatedAt = time.Now()
+
+	// Validate required fields
+	if err := validate.Struct(body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	if err := database.DB.Create(&body).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(body)
 }
 
-// Get All Investments
-func (h *InvestmentHandler) GetInvestments(c *fiber.Ctx) error {
-	userID := c.Query("user_id") 
-	if userID == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "user_id required"})
-	}
+// ================= Get All Investments =================
+func GetInvestments(c *fiber.Ctx) error {
+	uidStr := c.Locals("user_id").(string)
+	uid, _ := uuid.Parse(uidStr)
 
 	var investments []models.Investment
-	err := h.DB.Select(&investments, "SELECT * FROM investments WHERE user_id=$1 ORDER BY created_at DESC", userID)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to fetch", "details": err.Error()})
+	if err := database.DB.Where("user_id = ?", uid).Order("created_at desc").Find(&investments).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(investments)
 }
 
-// Get Single Investment
-func (h *InvestmentHandler) GetInvestment(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var inv models.Investment
-	err := h.DB.Get(&inv, "SELECT * FROM investments WHERE investment_id=$1", id)
+// ================= Get Single Investment =================
+func GetInvestment(c *fiber.Ctx) error {
+	uidStr := c.Locals("user_id").(string)
+	uid, _ := uuid.Parse(uidStr)
+	idStr := c.Params("id")
+	invID, err := uuid.Parse(idStr)
 	if err != nil {
-		return c.Status(404).JSON(fiber.Map{"error": "Not found"})
-	}
-	return c.JSON(inv)
-}
-
-// Update Investment
-func (h *InvestmentHandler) UpdateInvestment(c *fiber.Ctx) error {
-	id := c.Params("id")
-	var inv models.Investment
-	if err := c.BodyParser(&inv); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid input"})
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid investment ID")
 	}
 
-	inv.InvestmentID = uuid.MustParse(id)
-
-	_, err := h.DB.NamedExec(`
-		UPDATE investments 
-		SET type=:type, amount_invested=:amount_invested, current_value=:current_value, 
-		    date_invested=:date_invested, reminder_date=:reminder_date, notes=:notes
-		WHERE investment_id=:investment_id
-	`, inv)
-
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "DB update failed", "details": err.Error()})
+	var inv models.Investment
+	if err := database.DB.Where("investment_id = ? AND user_id = ?", invID, uid).First(&inv).Error; err != nil {
+		return fiber.NewError(fiber.StatusNotFound, "Investment not found")
 	}
 
 	return c.JSON(inv)
 }
 
-// Delete Investment
-func (h *InvestmentHandler) DeleteInvestment(c *fiber.Ctx) error {
-	id := c.Params("id")
-	_, err := h.DB.Exec("DELETE FROM investments WHERE investment_id=$1", id)
+// ================= Update Investment =================
+func UpdateInvestment(c *fiber.Ctx) error {
+	uidStr := c.Locals("user_id").(string)
+	uid, _ := uuid.Parse(uidStr)
+	idStr := c.Params("id")
+	invID, err := uuid.Parse(idStr)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "DB delete failed"})
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid investment ID")
 	}
-	return c.SendStatus(204)
+
+	var body models.Investment
+	if err := c.BodyParser(&body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	var inv models.Investment
+	if err := database.DB.Where("investment_id = ? AND user_id = ?", invID, uid).First(&inv).Error; err != nil {
+		return fiber.NewError(fiber.StatusNotFound, "Investment not found")
+	}
+
+	// Only update allowed fields
+	updates := map[string]interface{}{
+		"type":            body.Type,
+		"amount_invested": body.AmountInvested,
+		"current_value":   body.CurrentValue,
+		"date_invested":   body.DateInvested,
+		"reminder_date":   body.ReminderDate,
+		"notes":           body.Notes,
+	}
+
+	if err := database.DB.Model(&inv).Updates(updates).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(inv)
+}
+
+// ================= Delete Investment =================
+func DeleteInvestment(c *fiber.Ctx) error {
+	uidStr := c.Locals("user_id").(string)
+	uid, _ := uuid.Parse(uidStr)
+	idStr := c.Params("id")
+	invID, err := uuid.Parse(idStr)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid investment ID")
+	}
+
+	if err := database.DB.Where("investment_id = ? AND user_id = ?", invID, uid).Delete(&models.Investment{}).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
 }

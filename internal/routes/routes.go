@@ -4,10 +4,9 @@ import (
 	"github.com/PragaL15/Expense-Tracker/internal/handlers"
 	"github.com/PragaL15/Expense-Tracker/internal/middleware"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jmoiron/sqlx"
 )
 
-func Register(app *fiber.App, db *sqlx.DB) {
+func Register(app *fiber.App) {
 	api := app.Group("/api/v1")
 
 	// --- Auth ---
@@ -43,10 +42,9 @@ func Register(app *fiber.App, db *sqlx.DB) {
 	p.Get("/category-budgets", handlers.GetCategoryBudget)
 
 	// --- Investments ---
-	investmentHandler := &handlers.InvestmentHandler{DB: db}
-	p.Post("/investments", investmentHandler.AddInvestment)
-	p.Get("/investments", investmentHandler.GetInvestments)
-	p.Get("/investments/:id", investmentHandler.GetInvestment)
-	p.Put("/investments/:id", investmentHandler.UpdateInvestment)
-	p.Delete("/investments/:id", investmentHandler.DeleteInvestment)
+	p.Post("/investments", handlers.AddInvestment)
+	p.Get("/investments", handlers.GetInvestments)
+	p.Get("/investments/:id", handlers.GetInvestment)
+	p.Put("/investments/:id", handlers.UpdateInvestment)
+	p.Delete("/investments/:id", handlers.DeleteInvestment)
 }
