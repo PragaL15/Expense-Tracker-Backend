@@ -25,13 +25,10 @@ func AddInvestment(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
-
-	// Assign server-side fields
 	body.UserID = uid
 	body.InvestmentID = uuid.New() // Correct type
 	body.CreatedAt = time.Now()
 
-	// Validate required fields
 	if err := validate.Struct(body); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
@@ -43,7 +40,6 @@ func AddInvestment(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(body)
 }
 
-// ================= Get All Investments =================
 func GetInvestments(c *fiber.Ctx) error {
 	uidStr := c.Locals("user_id").(string)
 	uid, _ := uuid.Parse(uidStr)
@@ -56,7 +52,6 @@ func GetInvestments(c *fiber.Ctx) error {
 	return c.JSON(investments)
 }
 
-// ================= Get Single Investment =================
 func GetInvestment(c *fiber.Ctx) error {
 	uidStr := c.Locals("user_id").(string)
 	uid, _ := uuid.Parse(uidStr)
@@ -74,7 +69,6 @@ func GetInvestment(c *fiber.Ctx) error {
 	return c.JSON(inv)
 }
 
-// ================= Update Investment =================
 func UpdateInvestment(c *fiber.Ctx) error {
 	uidStr := c.Locals("user_id").(string)
 	uid, _ := uuid.Parse(uidStr)
@@ -94,7 +88,6 @@ func UpdateInvestment(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Investment not found")
 	}
 
-	// Only update allowed fields
 	updates := map[string]interface{}{
 		"type":            body.Type,
 		"amount_invested": body.AmountInvested,
@@ -111,7 +104,6 @@ func UpdateInvestment(c *fiber.Ctx) error {
 	return c.JSON(inv)
 }
 
-// ================= Delete Investment =================
 func DeleteInvestment(c *fiber.Ctx) error {
 	uidStr := c.Locals("user_id").(string)
 	uid, _ := uuid.Parse(uidStr)
