@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"time"
-
+"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -14,6 +14,7 @@ import (
 var validate5= validator.New()
 
 // ================= Add Investment =================
+// ================= Add Investment =================
 func AddInvestment(c *fiber.Ctx) error {
 	uidStr := c.Locals("user_id").(string)
 	uid, err := uuid.Parse(uidStr)
@@ -21,24 +22,32 @@ func AddInvestment(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid user ID")
 	}
 
+	// Debug raw body
+	fmt.Println("BODY RAW:", string(c.Body()))
+
 	var body models.Investment
 	if err := c.BodyParser(&body); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body: "+err.Error())
 	}
+
+	// Assign server-side fields
 	body.UserID = uid
-	body.InvestmentID = uuid.New() // Correct type
+	body.InvestmentID = uuid.New()
 	body.CreatedAt = time.Now()
 
-	if err := validate.Struct(body); err != nil {
+	// Validate required fields
+	if err := validate5.Struct(body); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
+	// Save to DB
 	if err := database.DB.Create(&body).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(body)
 }
+
 
 func GetInvestments(c *fiber.Ctx) error {
 	uidStr := c.Locals("user_id").(string)
