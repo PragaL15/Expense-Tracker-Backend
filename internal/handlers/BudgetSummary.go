@@ -13,11 +13,13 @@ type CategoryBudgetRow struct {
 }
 
 type BudgetSummaryResponse struct {
-	UserID          string              `json:"user_id"`
-	CategoryBudgets []CategoryBudgetRow `json:"category_budgets"`
-	TotalBudget     float64             `json:"total_budget"`
-	TotalSpent      float64             `json:"total_spent"`
-	TotalIncome     float64             `json:"total_income"`
+	UserID           string              `json:"user_id"`
+	CategoryBudgets  []CategoryBudgetRow `json:"category_budgets"`
+	TotalBudget      float64             `json:"total_budget"`
+	TotalSpent       float64             `json:"total_spent"`
+	TotalIncome      float64             `json:"total_income"`
+	TotalInvestments float64             `json:"total_investments"` // ✅ new field
+	LeftToSpend      float64             `json:"left_to_spend"`     // ✅ new field
 }
 
 func BudgetSummary(c *fiber.Ctx) error {
@@ -26,6 +28,7 @@ func BudgetSummary(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusUnauthorized, "invalid user context")
 	}
 
+	// --- Category Budgets + Spent (Expenses + Investments) ---
 	var rows []CategoryBudgetRow
 	raw := `
 WITH budgets AS (
@@ -38,16 +41,16 @@ spent AS (
   SELECT category_id, COALESCE(SUM(amount),0) AS spent
   FROM transactions
   WHERE user_id = ?
-    AND transaction_type IN ('Expense', 'Investment')   -- ✅ count investments like expenses
+    AND transaction_type IN ('Expense', 'Investment')  -- include investments
   GROUP BY category_id
 )
 SELECT c.category_id,
        c.name AS category_name,
        COALESCE(budgets.budget_limit, 0) AS budget_limit,
-       COALESCE(spent.spent, 0)          AS spent
+       COALESCE(spent.spent, 0) AS spent
 FROM categories c
 LEFT JOIN budgets ON budgets.category_id = c.category_id
-LEFT JOIN spent   ON spent.category_id   = c.category_id
+LEFT JOIN spent   ON spent.category_id = c.category_id
 WHERE budgets.category_id IS NOT NULL OR spent.category_id IS NOT NULL
 ORDER BY c.name;
 `
@@ -55,6 +58,7 @@ ORDER BY c.name;
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
+	// --- Total Budget ---
 	var totalBudget float64
 	if err := database.DB.Raw(
 		`SELECT COALESCE(SUM(budget_limit),0) FROM category_budgets WHERE user_id = ?`,
@@ -63,18 +67,31 @@ ORDER BY c.name;
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	var totalSpent float64
+	// --- Total Spent (Expenses only) ---
+	var totalExpenses float64
 	if err := database.DB.Raw(
 		`SELECT COALESCE(SUM(amount),0) 
          FROM transactions 
          WHERE user_id = ? 
-           AND transaction_type IN ('Expense', 'Investment')`,  // ✅ include investments
+           AND transaction_type = 'Expense'`,
 		uid,
-	).Scan(&totalSpent).Error; err != nil {
+	).Scan(&totalExpenses).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	// Total income (still only Income)
+	// --- Total Investments ---
+	var totalInvestments float64
+	if err := database.DB.Raw(
+		`SELECT COALESCE(SUM(amount),0) 
+         FROM transactions 
+         WHERE user_id = ? 
+           AND transaction_type = 'Investment'`,
+		uid,
+	).Scan(&totalInvestments).Error; err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+
+	// --- Total Income ---
 	var totalIncome float64
 	if err := database.DB.Raw(
 		`SELECT COALESCE(SUM(amount),0) 
@@ -87,11 +104,13 @@ ORDER BY c.name;
 	}
 
 	resp := BudgetSummaryResponse{
-		UserID:          uid,
-		CategoryBudgets: rows,
-		TotalBudget:     totalBudget,
-		TotalSpent:      totalSpent,
-		TotalIncome:     totalIncome,
+		UserID:           uid,
+		CategoryBudgets:  rows,
+		TotalBudget:      totalBudget,
+		TotalSpent:       totalExpenses + totalInvestments, // ✅ Expenses + Investments
+		TotalIncome:      totalIncome,
+		TotalInvestments: totalInvestments,
+		LeftToSpend:      totalBudget - (totalExpenses + totalInvestments), // ✅ budget minus spent + investments
 	}
 
 	return c.JSON(resp)
