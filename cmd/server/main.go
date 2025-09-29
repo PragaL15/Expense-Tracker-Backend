@@ -17,7 +17,7 @@ func main() {
 
 	app.Use(cors.New(cors.Config{
 		//AllowOrigins: "https://expense-tracker-frontend-one-hazel.vercel.app/", 
-		AllowOrigins: "*",
+		AllowOrigins: "http://localhost:5173",
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders: "Content-Type, Authorization",
 	}))
