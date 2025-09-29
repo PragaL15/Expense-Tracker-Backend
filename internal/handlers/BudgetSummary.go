@@ -38,7 +38,7 @@ spent AS (
   SELECT category_id, COALESCE(SUM(amount),0) AS spent
   FROM transactions
   WHERE user_id = ?
-    AND transaction_type = 'Expense'
+    AND transaction_type IN ('Expense', 'Investment')   -- ✅ count investments like expenses
   GROUP BY category_id
 )
 SELECT c.category_id,
@@ -65,16 +65,22 @@ ORDER BY c.name;
 
 	var totalSpent float64
 	if err := database.DB.Raw(
-		`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Expense'`,
+		`SELECT COALESCE(SUM(amount),0) 
+         FROM transactions 
+         WHERE user_id = ? 
+           AND transaction_type IN ('Expense', 'Investment')`,  // ✅ include investments
 		uid,
 	).Scan(&totalSpent).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	// Total income (all income)
+	// Total income (still only Income)
 	var totalIncome float64
 	if err := database.DB.Raw(
-		`SELECT COALESCE(SUM(amount),0) FROM transactions WHERE user_id = ? AND transaction_type = 'Income'`,
+		`SELECT COALESCE(SUM(amount),0) 
+         FROM transactions 
+         WHERE user_id = ? 
+           AND transaction_type = 'Income'`,
 		uid,
 	).Scan(&totalIncome).Error; err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
