@@ -30,12 +30,10 @@ func Load() *Config {
 		JWTExpires:  os.Getenv("JWT_EXPIRES_HOURS"),
 	}
 
-	// Fail fast if DATABASE_URL is missing
 	if cfg.DatabaseURL == "" {
 		log.Fatal("❌ missing required env var: DATABASE_URL")
 	}
 
-	// Default port if empty
 	if cfg.Port == "" {
 		cfg.Port = "3000"
 	}
