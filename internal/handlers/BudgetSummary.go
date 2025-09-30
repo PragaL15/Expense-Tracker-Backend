@@ -107,10 +107,10 @@ ORDER BY c.name;
 		UserID:           uid,
 		CategoryBudgets:  rows,
 		TotalBudget:      totalBudget,
-		TotalSpent:       totalExpenses + totalInvestments, // ✅ Expenses + Investments
+		TotalSpent:       totalExpenses + totalInvestments, 
 		TotalIncome:      totalIncome,
 		TotalInvestments: totalInvestments,
-		LeftToSpend:      totalBudget - (totalExpenses + totalInvestments), // ✅ budget minus spent + investments
+		LeftToSpend:      totalBudget - (totalExpenses + totalInvestments), 
 	}
 
 	return c.JSON(resp)
