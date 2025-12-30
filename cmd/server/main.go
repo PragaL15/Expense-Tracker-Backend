@@ -14,12 +14,12 @@ func main() {
 	cfg := config.Load()
 	database.Connect(cfg.DatabaseURL)
 	app := fiber.New()
-
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "https://expense-tracker-frontend-one-hazel.vercel.app/",
-		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
-		AllowHeaders: "Content-Type, Authorization",
-	}))
+    AllowOrigins: "*",
+    AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",
+    AllowHeaders: "Content-Type, Authorization",
+}))
+
 
 	app.Get("/healthz", func(c *fiber.Ctx) error {
 		return c.SendString("ok")
